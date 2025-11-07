@@ -2,7 +2,7 @@ from pyspark.sql import SparkSession, functions as F
 import os, shutil, glob
 
 # ===========================================================
-# 1️⃣ Initialize Spark
+# 1️ Initialize Spark
 # ===========================================================
 spark = (
     SparkSession.builder
@@ -14,19 +14,19 @@ spark.sparkContext.setLogLevel("WARN")
 print("✅ Spark session started successfully")
 
 # ===========================================================
-# 2️⃣ Define Paths
+# 2️ Define Paths
 # ===========================================================
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 OUTPUT_DIR = os.path.join(BASE_DIR, "output")
 os.makedirs(OUTPUT_DIR, exist_ok=True)
 
 # ===========================================================
-# 3️⃣ Load all CSVs
+# 3️ Load all CSVs
 # ===========================================================
 def load_csv(name):
     path = os.path.join(BASE_DIR, f"{name}.csv")
     df = spark.read.option("header", True).csv(path, inferSchema=True)
-    print(f"✅ Loaded {name}.csv with {df.count()} rows and {len(df.columns)} columns")
+    print(f" Loaded {name}.csv with {df.count()} rows and {len(df.columns)} columns")
     return df
 
 users_df = load_csv("users")
@@ -35,7 +35,7 @@ transactions_df = load_csv("transactions")
 priceplans_df = load_csv("price_plans")
 
 # ===========================================================
-# 4️⃣ Parse timestamps and numeric types
+# 4️ Parse timestamps and numeric types
 # ===========================================================
 def cast_timestamps(df):
     for c in df.columns:
@@ -53,7 +53,7 @@ priceplans_df = priceplans_df.withColumn("price", F.col("price").cast("double"))
 print("✅ Data types normalized and timestamps parsed")
 
 # ===========================================================
-# 5️⃣ Create user_subscription_summary
+# 5️ Create user_subscription_summary
 # ===========================================================
 user_subscription_summary = (
     subs_df
@@ -73,7 +73,7 @@ print("✅ Created user_subscription_summary")
 
 
 # ===========================================================
-# 6️⃣  Create subscription_transactions_summary (robust)
+# 6️  Create subscription_transactions_summary (robust)
 # ===========================================================
 txn_cols = {c.lower(): c for c in transactions_df.columns}
 
@@ -92,7 +92,7 @@ transaction_ts_col = find_col(["transaction_timestamp", "txn_timestamp", "timest
 print("\n🔍 Transaction Column Mapping:")
 print(f"  id={transaction_id_col}, status={transaction_status_col}, amount={transaction_amount_col}, created={txn_created_col}, ts={transaction_ts_col}")
 
-# ✅ Build select list dynamically — skip any missing columns
+#  Build select list dynamically — skip any missing columns
 select_cols = ["user_id", "subs_id", "price_plan_name"]
 
 if transaction_id_col:
@@ -113,11 +113,11 @@ subscription_transactions_summary = (
     .select(*select_cols)
 )
 
-print(f"✅ Created subscription_transactions_summary with {subscription_transactions_summary.count()} rows")
+print(f" Created subscription_transactions_summary with {subscription_transactions_summary.count()} rows")
 
 
 # ===========================================================
-# 7️⃣ Write Outputs
+# 7️ Write Outputs
 # ===========================================================
 def write_csv(df, folder, filename):
     out_path = os.path.join(OUTPUT_DIR, folder)
@@ -132,7 +132,7 @@ write_csv(user_subscription_summary, "user_subscription_summary", "user_subscrip
 write_csv(subscription_transactions_summary, "subscription_transactions_summary", "subscription_transactions_summary.csv")
 
 # ===========================================================
-# 8️⃣ Additional Analytics (same as Databricks)
+# 8️ Additional Analytics (same as Databricks)
 # ===========================================================
 print("\n📈 Running summary analytics...")
 
@@ -174,7 +174,7 @@ daily_cancellations = (
 daily_cancellations.show(5)
 
 # ===========================================================
-# 9️⃣ Stop Spark
+# 9️ Stop Spark
 # ===========================================================
 spark.stop()
 print("\n🏁 Spark job completed successfully!")
