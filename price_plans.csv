@@ -1,0 +1,5 @@
+price_plan_id,price_plan_name,price,payment_period,price_plan_type
+1,basic,10,monthly,recurring
+2,sport,20,monthly,recurring
+3,premium,30,monthly,recurring
+4,free_trial,0,weekly,one_time
