@@ -1,9 +1,9 @@
 from pyspark.sql import SparkSession, functions as F
 import os, shutil, glob
 
-# ===========================================================
+
 # 1️ Initialize Spark
-# ===========================================================
+
 spark = (
     SparkSession.builder
     .appName("MediaAppAnalytics")
@@ -11,18 +11,18 @@ spark = (
     .getOrCreate()
 )
 spark.sparkContext.setLogLevel("WARN")
-print("✅ Spark session started successfully")
+print(" Spark session started successfully")
 
-# ===========================================================
+
 # 2️ Define Paths
-# ===========================================================
+
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 OUTPUT_DIR = os.path.join(BASE_DIR, "output")
 os.makedirs(OUTPUT_DIR, exist_ok=True)
 
-# ===========================================================
+
 # 3️ Load all CSVs
-# ===========================================================
+
 def load_csv(name):
     path = os.path.join(BASE_DIR, f"{name}.csv")
     df = spark.read.option("header", True).csv(path, inferSchema=True)
@@ -34,9 +34,9 @@ subs_df = load_csv("subscriptions")
 transactions_df = load_csv("transactions")
 priceplans_df = load_csv("price_plans")
 
-# ===========================================================
+
 # 4️ Parse timestamps and numeric types
-# ===========================================================
+
 def cast_timestamps(df):
     for c in df.columns:
         if "timestamp" in c.lower():
@@ -50,11 +50,11 @@ users_df = cast_timestamps(users_df)
 transactions_df = transactions_df.withColumn("transaction_amount", F.col("transaction_amount").cast("double"))
 priceplans_df = priceplans_df.withColumn("price", F.col("price").cast("double"))
 
-print("✅ Data types normalized and timestamps parsed")
+print(" Data types normalized and timestamps parsed")
 
-# ===========================================================
+
 # 5️ Create user_subscription_summary
-# ===========================================================
+
 user_subscription_summary = (
     subs_df
     .join(users_df, ["user_id"], "left")
@@ -69,12 +69,12 @@ user_subscription_summary = (
         "subs_cancel_timestamp", "is_active"
     )
 )
-print("✅ Created user_subscription_summary")
+print(" Created user_subscription_summary")
 
 
-# ===========================================================
+
 # 6️  Create subscription_transactions_summary (robust)
-# ===========================================================
+
 txn_cols = {c.lower(): c for c in transactions_df.columns}
 
 def find_col(candidates):
@@ -116,9 +116,9 @@ subscription_transactions_summary = (
 print(f" Created subscription_transactions_summary with {subscription_transactions_summary.count()} rows")
 
 
-# ===========================================================
+
 # 7️ Write Outputs
-# ===========================================================
+
 def write_csv(df, folder, filename):
     out_path = os.path.join(OUTPUT_DIR, folder)
     if os.path.exists(out_path):
@@ -126,15 +126,14 @@ def write_csv(df, folder, filename):
     df.coalesce(1).write.mode("overwrite").option("header", True).csv(out_path)
     part = glob.glob(f"{out_path}/part-*.csv")[0]
     os.rename(part, os.path.join(out_path, filename))
-    print(f"📝 Saved {filename}")
+    print(f" Saved {filename}")
 
 write_csv(user_subscription_summary, "user_subscription_summary", "user_subscription_summary.csv")
 write_csv(subscription_transactions_summary, "subscription_transactions_summary", "subscription_transactions_summary.csv")
 
-# ===========================================================
 # 8️ Additional Analytics (same as Databricks)
-# ===========================================================
-print("\n📈 Running summary analytics...")
+
+print("\n Running summary analytics...")
 
 # a) Daily new users
 daily_new_users = (
@@ -173,8 +172,7 @@ daily_cancellations = (
 )
 daily_cancellations.show(5)
 
-# ===========================================================
 # 9️ Stop Spark
-# ===========================================================
+
 spark.stop()
-print("\n🏁 Spark job completed successfully!")
+print("\n Spark job completed successfully!")
